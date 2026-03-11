@@ -1,10 +1,14 @@
 {
   "manifest_version": 3,
-  "name": "My React Extension",
+  "name": "Time Tracker",
   "version": "1.0.0",
-  "description": "A Chrome extension built with React",
+  "description": "Track time spent on specific tabs",
+  "permissions": ["tabs", "storage", "activeTab", "alarms"],
   "action": {
     "default_popup": "index.html",
-    "default_title": "My React Extension"
+    "default_title": "Time Tracker"
+  },
+  "background": {
+    "service_worker": "background.js"
   }
 }

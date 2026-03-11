@@ -1,0 +1,55 @@
+.label-input {
+  display: flex;
+  gap: 8px;
+}
+
+.label-input-field {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1e293b;
+  background: #f8fafc;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.label-input-field:focus {
+  border-color: #7c3aed;
+  background: #fff;
+}
+
+.label-input-field:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.label-input-btn {
+  padding: 8px 14px;
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    transform 0.1s;
+  white-space: nowrap;
+}
+
+.label-input-btn:hover:not(:disabled) {
+  background: #6d28d9;
+  transform: translateY(-1px);
+}
+
+.label-input-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.label-input-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
