@@ -1,4 +1,5 @@
-const ALARM_NAME = "time-tracker-tick";
+// Simple approach: record when a tracked domain becomes active,
+// and when it stops being active, add the elapsed seconds.
 
 function getDomain(url) {
   try {
@@ -8,94 +9,81 @@ function getDomain(url) {
   }
 }
 
-async function updateActiveTab() {
+// Flush time: calculate elapsed since _startedAt and add to matching tracked tabs
+async function flushTime() {
+  const data = await chrome.storage.local.get([
+    "trackedTabs",
+    "_activeDomain",
+    "_startedAt",
+  ]);
+  const { _activeDomain, _startedAt, trackedTabs } = data;
+  if (!_activeDomain || !_startedAt) return;
+
+  const elapsed = Math.round((Date.now() - _startedAt) / 1000);
+  if (elapsed < 1) return;
+
+  const tabs = trackedTabs || [];
+  let changed = false;
+  for (const tab of tabs) {
+    if (
+      _activeDomain === tab.domain ||
+      _activeDomain.endsWith("." + tab.domain)
+    ) {
+      tab.totalSeconds = (tab.totalSeconds || 0) + elapsed;
+      changed = true;
+    }
+  }
+  if (changed) {
+    await chrome.storage.local.set({
+      trackedTabs: tabs,
+      _startedAt: Date.now(),
+    });
+  } else {
+    await chrome.storage.local.set({ _startedAt: Date.now() });
+  }
+}
+
+async function setActiveDomain() {
+  // Flush time for the previous domain first
+  await flushTime();
+
   try {
     const [tab] = await chrome.tabs.query({
       active: true,
       currentWindow: true,
     });
     if (tab && tab.url) {
-      const domain = getDomain(tab.url);
-      const data = await chrome.storage.local.get("_activeDomain");
-      if (data._activeDomain !== domain) {
-        // Domain changed — flush elapsed time for old domain first
-        await tickTracking();
-        await chrome.storage.local.set({
-          _activeDomain: domain,
-          _lastTick: Date.now(),
-        });
-      }
+      await chrome.storage.local.set({
+        _activeDomain: getDomain(tab.url),
+        _startedAt: Date.now(),
+      });
     } else {
-      await tickTracking();
-      await chrome.storage.local.set({ _activeDomain: null });
+      await chrome.storage.local.set({
+        _activeDomain: null,
+        _startedAt: null,
+      });
     }
   } catch {
-    await chrome.storage.local.set({ _activeDomain: null });
+    await chrome.storage.local.set({ _activeDomain: null, _startedAt: null });
   }
 }
 
-async function tickTracking() {
-  const data = await chrome.storage.local.get([
-    "trackedTabs",
-    "_activeDomain",
-    "_lastTick",
-  ]);
-  const activeDomain = data._activeDomain;
-  if (!activeDomain) return;
+// Flush periodically so time is saved even if user never switches tabs
+chrome.alarms.create("flush", { periodInMinutes: 0.5 });
+chrome.alarms.onAlarm.addListener(() => flushTime());
 
-  const now = Date.now();
-  const lastTick = data._lastTick || now;
-  const elapsed = Math.min(Math.round((now - lastTick) / 1000), 300);
-  if (elapsed < 1) return;
-
-  const trackedTabs = data.trackedTabs || [];
-  let updated = false;
-
-  for (const tab of trackedTabs) {
-    if (
-      activeDomain === tab.domain ||
-      activeDomain.endsWith("." + tab.domain)
-    ) {
-      tab.totalSeconds = (tab.totalSeconds || 0) + elapsed;
-      updated = true;
-    }
-  }
-
-  if (updated) {
-    await chrome.storage.local.set({ trackedTabs, _lastTick: now });
+chrome.tabs.onActivated.addListener(() => setActiveDomain());
+chrome.tabs.onUpdated.addListener((_id, info) => {
+  if (info.url || info.status === "complete") setActiveDomain();
+});
+chrome.windows.onFocusChanged.addListener((wid) => {
+  if (wid === chrome.windows.WINDOW_ID_NONE) {
+    flushTime().then(() =>
+      chrome.storage.local.set({ _activeDomain: null, _startedAt: null }),
+    );
   } else {
-    await chrome.storage.local.set({ _lastTick: now });
-  }
-}
-
-// Chrome clamps alarm minimum to ~30s, but elapsed calculation catches up
-chrome.alarms.create(ALARM_NAME, { periodInMinutes: 0.5 });
-
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === ALARM_NAME) {
-    tickTracking();
+    setActiveDomain();
   }
 });
 
-chrome.tabs.onActivated.addListener(updateActiveTab);
-chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => {
-  if (changeInfo.url || changeInfo.status === "complete") {
-    updateActiveTab();
-  }
-});
-chrome.windows.onFocusChanged.addListener((windowId) => {
-  if (windowId === chrome.windows.WINDOW_ID_NONE) {
-    tickTracking().then(() => {
-      chrome.storage.local.set({ _activeDomain: null });
-    });
-  } else {
-    updateActiveTab();
-  }
-});
-
-updateActiveTab();
-chrome.storage.local.get("_lastTick", (data) => {
-  if (!data._lastTick) {
-    chrome.storage.local.set({ _lastTick: Date.now() });
-  }
-});
+setActiveDomain();

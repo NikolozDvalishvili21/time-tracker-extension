@@ -1,0 +1,94 @@
+.welcome-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.welcome-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px 24px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  max-width: 320px;
+  width: 100%;
+}
+
+.welcome-emoji {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.welcome-card h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 8px;
+}
+
+.welcome-desc {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 20px;
+}
+
+.welcome-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.welcome-steps li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: #334155;
+}
+
+.step-num {
+  width: 24px;
+  height: 24px;
+  background: #7c3aed;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.welcome-btn {
+  width: 100%;
+  padding: 10px;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 0.1s,
+    box-shadow 0.2s;
+}
+
+.welcome-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+}
+
+.welcome-btn:active {
+  transform: translateY(0);
+}

@@ -18,21 +18,25 @@ export function useTrackedTabs() {
   useEffect(() => {
     function loadTabs() {
       chrome.storage.local.get(
-        ["trackedTabs", "_activeDomain", "_lastTick"],
+        ["trackedTabs", "_activeDomain", "_startedAt"],
         (data: {
           trackedTabs?: TrackedTab[];
           _activeDomain?: string;
-          _lastTick?: number;
+          _startedAt?: number;
         }) => {
           const tabs = data.trackedTabs || [];
           const activeDomain = data._activeDomain;
-          const lastTick = data._lastTick || Date.now();
-          const elapsed = Math.round((Date.now() - lastTick) / 1000);
+          const startedAt = data._startedAt;
+          const elapsed =
+            activeDomain && startedAt
+              ? Math.round((Date.now() - startedAt) / 1000)
+              : 0;
 
           // Show interpolated time for tabs matching active domain
           const display = tabs.map((t) => {
             if (
               activeDomain &&
+              elapsed > 0 &&
               (activeDomain === t.domain ||
                 activeDomain.endsWith("." + t.domain))
             ) {
